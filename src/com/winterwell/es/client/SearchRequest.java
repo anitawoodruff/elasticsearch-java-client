@@ -1,11 +1,9 @@
 package com.winterwell.es.client;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import com.winterwell.es.client.admin.SearchSettingsRequest;
 import com.winterwell.es.client.agg.Aggregation;
 import com.winterwell.es.client.agg.Aggregations;
 import com.winterwell.es.client.query.ESQueryBuilder;
@@ -15,7 +13,6 @@ import com.winterwell.es.client.suggest.Suggester;
 import com.winterwell.es.client.suggest.Suggesters;
 import com.winterwell.utils.StrUtils;
 import com.winterwell.utils.containers.ArrayMap;
-import com.winterwell.utils.containers.Containers;
 import com.winterwell.utils.log.Log;
 import com.winterwell.utils.time.Dt;
 import com.winterwell.utils.time.TUnit;
@@ -229,5 +226,31 @@ public class SearchRequest extends ESHttpRequest<SearchRequest,SearchResponse> {
 		Number n = (Number) params.get("size");
 		return n==null? null : n.intValue();
 	}
-	
+
+	public void addFunctionScore() {
+		Map query = (Map) body().get("query");
+		Map functionScoreQuery = new ArrayMap("query", query);
+		functionScoreQuery.put("boost", 5);
+		functionScoreQuery.put("score_mode", "max");
+		functionScoreQuery.put("boost_mode", "replace");
+		List<Map> functionsList = new ArrayList<>();
+		functionsList.add(getScoreFunction("very-low", 10));
+		functionsList.add(getScoreFunction("too-rich", 20));
+		functionsList.add(getScoreFunction("more-info-needed", 30));
+		functionsList.add(getScoreFunction("more-info-needed-promising", 40));
+		functionsList.add(getScoreFunction("low", 50));
+		functionsList.add(getScoreFunction("slightly-low", 60));
+		functionsList.add(getScoreFunction("medium", 80));
+		functionsList.add(getScoreFunction("high", 100));
+
+		functionScoreQuery.put("functions", functionsList);
+		Map newQuery = new ArrayMap("function_score", functionScoreQuery);
+		setQuery(newQuery);
+	}
+
+	private ArrayMap getScoreFunction(String impactLevel, int weight) {
+		Map filterMap = new ArrayMap<>("match", new ArrayMap<>("impact", impactLevel));
+		ArrayMap scoreFunction = new ArrayMap("filter", filterMap, "weight", weight);
+		return scoreFunction;
+	}
 }
