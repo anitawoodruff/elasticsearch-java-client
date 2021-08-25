@@ -33,7 +33,8 @@ public class TransformRequest extends ESHttpRequest<TransformRequest, IESRespons
 	public TransformRequest(ESHttpClient esHttpClient, String transform_job, String request) {
 		super(esHttpClient, "_transform/"+transform_job);
 		// Check job name conforms
-		if ( transform_job.length() > 64 || ! Pattern.matches("[a-z0-9][a-z0-9_\\-]*", transform_job)) {
+		// NB: allow for +"/_start"
+		if ( transform_job.length() > 71 || ! Pattern.matches("[a-z0-9][a-z0-9_\\-/]*", transform_job)) {
 			throw new IllegalArgumentException(transform_job);
 		}			
 		setIndex(null); 
